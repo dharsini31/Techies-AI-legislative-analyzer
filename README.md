@@ -1,97 +1,143 @@
-# ⚖️ AI Legislative Analyzer  
-### Pipeline Optimization for Large-Scale Legal Document Analysis
+🧠 AI Legislative Analyzer
 
----
+An intelligent system that analyzes legal documents, bills, and policies using AI to simplify complex legal language and provide meaningful insights.
 
-## 📌 Overview
+📌 Project Overview
 
-The **AI Legislative Analyzer** is a pipeline-optimized system designed to simplify and analyze complex legal and government documents. It processes large policy documents efficiently by reducing unnecessary content and generating concise, meaningful summaries.
+The AI Legislative Analyzer is designed to help users understand legal documents easily. It uses Natural Language Processing (NLP) and Machine Learning (ML) techniques to:
 
-This project focuses on **Pipeline Optimization**, ensuring faster processing, reduced computational cost, and scalable performance.
+Analyze legal text
 
----
+Extract key insights
 
-## 🚀 Problem Statement
+Detect risks or ambiguities
 
-Legal and government documents are often:
-- Extremely long (100k+ tokens)
-- Difficult to understand for common users
-- Expensive to process using AI models
+Summarize complex laws into simple language
 
-Our solution optimizes the processing pipeline to make legal information:
-- ✅ Faster to analyze  
-- ✅ Cost-efficient  
-- ✅ Easy to understand  
+This project aims to make legal information accessible to everyone, even without a legal background.
 
----
+🚀 Features
 
-## 💡 Solution Approach
+📄 Upload and analyze legal documents
 
-We designed a **multi-stage optimized pipeline**:
+🧾 Automatic summarization of laws
 
-1. **Text Extraction**
-   - Extract text from PDF using `pdfPlumber`
+⚠️ Risk & ambiguity detection
 
-2. **Preprocessing**
-   - Clean and normalize text
-   - Remove noise and stopwords
+🔍 Keyword and clause extraction
 
-3. **Chunking**
-   - Split large documents into smaller parts
+🤖 AI-based interpretation of legal text
 
-4. **Relevance Filtering (TF-IDF)**
-   - Rank and select important content
-   - Remove low-value text
+📊 Clean and user-friendly dashboard
 
-5. **Token Compression**
-   - Reduce input size before summarization
+🛠️ Tech Stack
 
-6. **Summarization**
-   - Generate concise summaries
+Frontend:
 
-7. **Output Dashboard**
-   - Display simplified results and metrics
+HTML
 
----
+CSS
 
-## ⚙️ Pipeline Optimization Techniques
+JavaScript
 
-- 🔹 Parallel processing of text chunks  
-- 🔹 Token reduction using TF-IDF filtering  
-- 🔹 Early-stage filtering to avoid unnecessary computation  
-- 🔹 Efficient data flow between pipeline stages  
+Backend:
 
----
+Python (Flask)
 
-## 📊 Measurable Results
+Machine Learning:
 
-| Metric                     | Value              |
-|--------------------------|-------------------|
-| Original Tokens          | 120,000           |
-| Tokens After Compression | 28,000            |
-| Token Reduction          | ~76%              |
-| Cost Reduction           | ~70%              |
-| Processing Time Improved | ~40% faster       |
+NLP (Natural Language Processing)
 
----
+Scikit-learn / Transformers
 
-## 🌍 Real-World Applications
+Database:
 
-- Government policy simplification  
-- Legal document analysis  
-- Educational tools for law students  
-- Public awareness platforms  
-- NGO and research use  
+MySQL / MongoDB
 
----
+▶️ How to Run the Project
 
-## 🛠️ Tech Stack
 
-- **Frontend:** HTML, CSS, JavaScript  
-- **Backend:** Python, FastAPI  
-- **Libraries:**  
-  - pdfPlumber  
-  - NLTK  
-  - Scikit-learn (TF-IDF)  
+🔹 Step 1: Install Requirements
 
----
+Make sure Python is installed (Python 3.8+ recommended)
+
+pip install -r requirements.txt
+🔹 Step 2: Run Backend Server
+
+Go to backend folder (if separated):
+
+cd backend
+python app.py
+
+👉 You should see:
+
+Running on http://127.0.0.1:5000/
+🔹 Step 3: Run Frontend
+Option 1 (Simple):
+
+Open index.html in browser
+
+Option 2 (Recommended):
+
+Use Live Server (VS Code)
+
+🔹 Step 5: Connect Frontend with Backend
+
+Ensure API calls point to:
+
+http://127.0.0.1:5000/analyze
+
+Example:
+
+fetch("http://127.0.0.1:5000/analyze", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ text: inputText })
+})
+
+
+⚙️ How It Works
+
+User uploads or inputs a legal document
+
+Text is preprocessed (cleaning, tokenization)
+
+NLP models analyze the content
+
+System generates:
+
+Summary
+
+Risk indicators
+
+Key insights
+
+Results are displayed on the dashboard
+
+🔗 Connecting Frontend & Backend
+
+Ensure Flask server is running (localhost:5000)
+
+Use API endpoints in JavaScript (fetch or axios)
+
+Example:
+
+fetch("http://127.0.0.1:5000/analyze", {
+  method: "POST",
+  body: JSON.stringify({ text: inputText }),
+  headers: { "Content-Type": "application/json" }
+})
+
+Future Enhancements
+
+🌐 Multi-language support
+
+📱 Mobile app integration
+
+🔊 Voice-based explanation
+
+📊 Advanced analytics dashboard
+
+⭐ Conclusion
+
+The AI Legislative Analyzer simplifies complex legal content using AI, making laws more transparent and understandable for everyone.
