@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Legislative Analyzer — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0b0c0f;--surface:#13151a;--surface2:#1a1d24;--border:#22252e;
+  --accent:#c9a84c;--accent-dim:#8a6f30;--accent-glow:rgba(201,168,76,0.12);
+  --text:#e8e4d9;--muted:#6b7280;--success:#3d9970;--danger:#c0392b;
+  --info:#2980b9;--sidebar:220px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;display:flex;}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar);min-width:var(--sidebar);height:100vh;
+  background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;position:relative;z-index:50;
+  overflow:hidden;
+}
+.sidebar::before{
+  content:'';position:absolute;bottom:-30%;left:-40%;width:180%;height:60%;
+  background:radial-gradient(circle,rgba(201,168,76,0.05) 0%,transparent 70%);
+  pointer-events:none;
+}
+.sidebar-logo{
+  padding:1.5rem 1.25rem 1rem;
+  font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;
+  color:var(--accent);border-bottom:1px solid var(--border);
+  letter-spacing:-0.5px;
+}
+.sidebar-logo span{color:var(--text);}
+.nav-section{padding:1rem 0.75rem 0.5rem;}
+.nav-label{
+  font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.18em;
+  text-transform:uppercase;color:var(--muted);padding:0 0.5rem;margin-bottom:0.5rem;
+}
+.nav-item{
+  display:flex;align-items:center;gap:0.65rem;padding:0.65rem 0.75rem;
+  border-radius:3px;cursor:pointer;font-size:0.83rem;color:var(--muted);
+  transition:all 0.18s;border:1px solid transparent;margin-bottom:2px;
+  text-decoration:none;
+}
+.nav-item:hover{color:var(--text);background:var(--surface2);}
+.nav-item.active{
+  color:var(--accent);background:var(--accent-glow);
+  border-color:rgba(201,168,76,0.2);
+}
+.nav-item .icon{font-size:1rem;width:18px;text-align:center;}
+.sidebar-bottom{
+  margin-top:auto;padding:1rem;border-top:1px solid var(--border);
+}
+.user-card{
+  display:flex;align-items:center;gap:0.75rem;padding:0.75rem;
+  background:var(--surface2);border-radius:3px;border:1px solid var(--border);
+  margin-bottom:0.75rem;
+}
+.avatar{
+  width:34px;height:34px;background:var(--accent);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;font-weight:700;font-size:0.9rem;color:#0b0c0f;
+  flex-shrink:0;
+}
+.user-info{
+  display: flex;
+  flex-direction: column;
+}
+.user-name{font-size:0.82rem;font-weight:500;}
+.user-role{font-size:0.68rem;color:var(--muted);}
+.logout-btn{
+  width:100%;padding:0.6rem;background:transparent;
+  border:1px solid var(--border);border-radius:3px;color:var(--muted);
+  font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;
+  text-transform:uppercase;cursor:pointer;transition:all 0.18s;
+}
+.logout-btn:hover{border-color:var(--danger);color:var(--danger);}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+
+/* Top bar */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0.9rem 2rem;border-bottom:1px solid var(--border);
+  background:rgba(11,12,15,0.9);backdrop-filter:blur(10px);flex-shrink:0;
+}
+.breadcrumb{
+  font-family:'DM Mono',monospace;font-size:0.72rem;
+  letter-spacing:0.1em;color:var(--muted);
+}
+.breadcrumb span{color:var(--text);}
+.topbar-right{display:flex;align-items:center;gap:1rem;}
+.token-saved{
+  font-family:'DM Mono',monospace;font-size:0.72rem;
+  color:var(--success);background:rgba(61,153,112,0.1);
+  border:1px solid rgba(61,153,112,0.25);padding:0.35rem 0.9rem;border-radius:2px;
+  letter-spacing:0.05em;
+}
+
+/* ── CONTENT ── */
+.content{flex:1;overflow-y:auto;padding:2rem;}
+
+/* Tabs */
+.tab-pane{display:none;}
+.tab-pane.active{display:block;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══════ ANALYZER TAB ═══════ */
+.analyzer-header{margin-bottom:1.5rem;}
+.analyzer-header h1{
+  font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;margin-bottom:0.3rem;
+}
+.analyzer-header p{color:var(--muted);font-size:0.88rem;line-height:1.6;}
+
+.upload-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;
+  padding:2rem;margin-bottom:1.5rem;
+}
+.upload-label{
+  font-family:'DM Mono',monospace;font-size:0.68rem;letter-spacing:0.15em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem;
+}
+.drop-zone{
+  border:2px dashed var(--border);border-radius:4px;padding:2.5rem;
+  text-align:center;cursor:pointer;transition:all 0.2s;position:relative;
+}
+.drop-zone:hover,.drop-zone.over{border-color:var(--accent-dim);background:var(--accent-glow);}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.drop-icon{font-size:2rem;display:block;margin-bottom:0.5rem;opacity:0.6;}
+.drop-title{font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:0.3rem;}
+.drop-sub{font-size:0.78rem;color:var(--muted);}
+.file-badge{
+  margin-top:0.75rem;font-family:'DM Mono',monospace;font-size:0.75rem;
+  color:var(--accent);display:none;
+}
+
+.or-row{
+  display:flex;align-items:center;gap:1rem;margin:1rem 0;
+}
+.or-row::before,.or-row::after{content:'';flex:1;height:1px;background:var(--border);}
+.or-row span{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;}
+
+textarea{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:3px;padding:0.9rem;color:var(--text);
+  font-family:'DM Mono',monospace;font-size:0.82rem;
+  resize:vertical;min-height:130px;outline:none;line-height:1.6;
+  transition:border-color 0.2s;
+}
+textarea:focus{border-color:var(--accent-dim);}
+textarea::placeholder{color:var(--muted);opacity:0.5;}
+
+.meta-row{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-top:0.5rem;
+}
+.meta-stat{
+  font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--muted);
+  letter-spacing:0.08em;
+}
+
+/* Techniques grid */
+.techniques-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;
+  padding:1.5rem;margin-bottom:1.5rem;
+}
+.card-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:1rem;
+}
+.card-title{
+  font-family:'DM Mono',monospace;font-size:0.72rem;
+  letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);
+}
+.techniques-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;}
+.tech-item{
+  background:var(--surface2);border:1px solid var(--border);border-radius:3px;
+  padding:1rem;cursor:pointer;transition:all 0.18s;
+}
+.tech-item:hover,.tech-item.selected{
+  border-color:rgba(201,168,76,0.4);background:var(--accent-glow);
+}
+.tech-icon{font-size:1.2rem;margin-bottom:0.4rem;}
+.tech-name{font-size:0.82rem;font-weight:500;margin-bottom:0.2rem;}
+.tech-desc{font-size:0.72rem;color:var(--muted);line-height:1.5;margin-bottom:0.4rem;}
+.tech-pct{
+  font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--success);
+  background:rgba(61,153,112,0.1);border:1px solid rgba(61,153,112,0.2);
+  display:inline-block;padding:0.15rem 0.4rem;border-radius:2px;
+}
+
+/* Audience */
+.audience-row{display:flex;gap:0.5rem;margin-bottom:1.25rem;flex-wrap:wrap;}
+.aud-btn{
+  padding:0.5rem 1rem;background:var(--surface2);border:1px solid var(--border);
+  border-radius:2px;color:var(--muted);font-size:0.82rem;cursor:pointer;
+  transition:all 0.18s;
+}
+.aud-btn:hover,.aud-btn.active{
+  border-color:var(--accent-dim);color:var(--accent);background:var(--accent-glow);
+}
+
+/* Analyze button */
+.btn-analyze{
+  width:100%;padding:1rem;background:var(--accent);color:#0b0c0f;
+  border:none;border-radius:2px;
+  font-family:'DM Mono',monospace;font-size:0.85rem;font-weight:500;
+  letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;
+  transition:opacity 0.2s;display:flex;align-items:center;justify-content:center;gap:0.5rem;
+}
+.btn-analyze:hover{opacity:0.85;}
+.btn-analyze:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* Result */
+.result-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;
+  padding:1.5rem;margin-top:1.5rem;display:none;
+}
+.result-card.visible{display:block;animation:fadeIn 0.4s ease;}
+.result-tabs{display:flex;gap:0.25rem;margin-bottom:1.25rem;border-bottom:1px solid var(--border);padding-bottom:0.75rem;}
+.rtab{
+  padding:0.4rem 0.9rem;font-family:'DM Mono',monospace;font-size:0.72rem;
+  letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);
+  cursor:pointer;border-radius:2px;transition:all 0.18s;border:1px solid transparent;
+}
+.rtab.active{color:var(--accent);border-color:rgba(201,168,76,0.3);background:var(--accent-glow);}
+.result-actions{display:flex;gap:0.5rem;margin-left:auto;}
+.act-btn{
+  padding:0.35rem 0.8rem;background:transparent;border:1px solid var(--border);
+  border-radius:2px;color:var(--muted);font-family:'DM Mono',monospace;
+  font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;
+  transition:all 0.18s;
+}
+.act-btn:hover{border-color:var(--accent-dim);color:var(--accent);}
+.result-content{font-size:0.88rem;line-height:1.8;color:var(--text);white-space:pre-wrap;}
+.result-pane{display:none;}
+.result-pane.active{display:block;}
+.stat-chips{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;}
+.chip{
+  font-family:'DM Mono',monospace;font-size:0.7rem;padding:0.3rem 0.7rem;
+  border-radius:2px;border:1px solid;
+}
+.chip-gold{color:var(--accent);border-color:rgba(201,168,76,0.3);background:var(--accent-glow);}
+.chip-green{color:var(--success);border-color:rgba(61,153,112,0.3);background:rgba(61,153,112,0.08);}
+
+/* ═══════ PIPELINE MODAL ═══════ */
+.pipeline-overlay{
+  position:fixed;inset:0;background:rgba(11,12,15,0.88);backdrop-filter:blur(6px);
+  z-index:200;display:none;align-items:center;justify-content:center;
+}
+.pipeline-overlay.show{display:flex;}
+.pipeline-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:2.5rem;max-width:420px;width:90%;text-align:center;
+}
+.pipeline-title{
+  font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;
+  margin-bottom:0.25rem;
+}
+.pipeline-sub{font-size:0.82rem;color:var(--muted);margin-bottom:2rem;}
+.pipeline-steps{text-align:left;}
+.p-step{
+  display:flex;align-items:center;gap:0.9rem;padding:0.65rem 0;
+  border-bottom:1px solid var(--border);
+  font-size:0.85rem;color:var(--muted);transition:color 0.3s;
+}
+.p-step:last-child{border-bottom:none;}
+.p-step.done{color:var(--text);}
+.p-step.active{color:var(--accent);}
+.step-icon{font-size:1rem;width:24px;text-align:center;flex-shrink:0;}
+.step-spinner{
+  width:14px;height:14px;border:2px solid var(--border);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin 0.7s linear infinite;flex-shrink:0;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.step-check{color:var(--success);font-size:0.9rem;flex-shrink:0;}
+.progress-bar-wrap{
+  height:3px;background:var(--border);border-radius:2px;margin-top:1.5rem;overflow:hidden;
+}
+.progress-bar{
+  height:100%;background:linear-gradient(90deg,var(--accent-dim),var(--accent));
+  width:0%;transition:width 0.6s ease;border-radius:2px;
+}
+
+/* ═══════ HISTORY TAB ═══════ */
+.history-filters{display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap;}
+.hfilt{
+  padding:0.4rem 0.9rem;background:var(--surface);border:1px solid var(--border);
+  border-radius:2px;font-family:'DM Mono',monospace;font-size:0.7rem;
+  letter-spacing:0.08em;color:var(--muted);cursor:pointer;transition:all 0.18s;
+}
+.hfilt:hover,.hfilt.active{border-color:var(--accent-dim);color:var(--accent);}
+.history-list{display:flex;flex-direction:column;gap:0.75rem;}
+.hist-item{
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;
+  padding:1.25rem 1.5rem;display:flex;align-items:center;gap:1.25rem;
+  cursor:pointer;transition:all 0.18s;
+}
+.hist-item:hover{border-color:rgba(201,168,76,0.3);background:var(--surface2);}
+.hist-icon{
+  width:40px;height:40px;background:var(--accent-glow);border:1px solid rgba(201,168,76,0.2);
+  border-radius:3px;display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;flex-shrink:0;
+}
+.hist-body{flex:1;}
+.hist-name{font-size:0.88rem;font-weight:500;margin-bottom:0.2rem;}
+.hist-meta{font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--muted);letter-spacing:0.05em;}
+.hist-right{text-align:right;flex-shrink:0;}
+.hist-saved{font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--success);}
+.hist-date{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--muted);margin-top:0.2rem;}
+.empty-state{
+  text-align:center;padding:4rem 2rem;color:var(--muted);
+}
+.empty-icon{font-size:3rem;margin-bottom:1rem;opacity:0.4;}
+.empty-title{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--text);margin-bottom:0.5rem;}
+
+/* ═══════ METRICS TAB ═══════ */
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;}
+.metric-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;
+  padding:1.25rem;
+}
+.metric-label{
+  font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.13em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;
+}
+.metric-val{
+  font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;
+  color:var(--accent);margin-bottom:0.2rem;
+}
+.metric-sub{font-size:0.75rem;color:var(--muted);}
+
+.chart-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;
+  padding:1.5rem;margin-bottom:1.25rem;
+}
+.bar-chart{display:flex;flex-direction:column;gap:0.75rem;}
+.bar-row{display:flex;align-items:center;gap:0.75rem;}
+.bar-label{
+  font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);
+  width:160px;flex-shrink:0;
+}
+.bar-track{flex:1;height:22px;background:var(--surface2);border-radius:2px;overflow:hidden;}
+.bar-fill{
+  height:100%;background:linear-gradient(90deg,var(--accent-dim),var(--accent));
+  border-radius:2px;display:flex;align-items:center;padding-right:0.4rem;
+  justify-content:flex-end;transition:width 1s ease;
+}
+.bar-pct{
+  font-family:'DM Mono',monospace;font-size:0.65rem;color:#0b0c0f;font-weight:500;
+}
+
+/* ═══════ COMPARE TAB ═══════ */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.compare-panel{
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1.5rem;
+}
+.compare-title{
+  font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;
+  margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;
+}
+.btn-compare{
+  display:flex;align-items:center;justify-content:center;gap:0.5rem;
+  padding:0.9rem 2rem;background:var(--accent);color:#0b0c0f;border:none;
+  border-radius:2px;font-family:'DM Mono',monospace;font-size:0.82rem;
+  font-weight:500;letter-spacing:0.1em;text-transform:uppercase;
+  cursor:pointer;transition:opacity 0.2s;margin:0 auto;display:flex;
+}
+.btn-compare:hover{opacity:0.85;}
+.compare-result{
+  display:none;margin-top:1.5rem;
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1.5rem;
+}
+.compare-result.visible{display:block;animation:fadeIn 0.4s ease;}
+.compare-cols{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.compare-col h4{
+  font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.12em;
+  text-transform:uppercase;color:var(--accent);margin-bottom:0.75rem;
+}
+.compare-point{
+  display:flex;gap:0.5rem;align-items:flex-start;margin-bottom:0.5rem;
+  font-size:0.83rem;line-height:1.5;
+}
+.compare-point::before{
+  content:'▸';color:var(--accent);flex-shrink:0;margin-top:1px;
+}
+.diff-highlight{
+  background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.15);
+  border-radius:3px;padding:0.75rem;font-size:0.82rem;line-height:1.6;margin-top:0.75rem;
+}
+
+/* Scrollbar */
+.content::-webkit-scrollbar{width:5px;}
+.content::-webkit-scrollbar-track{background:transparent;}
+.content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* Responsive */
+@media(max-width:900px){
+  .metrics-grid{grid-template-columns:repeat(2,1fr);}
+  .techniques-grid{grid-template-columns:repeat(2,1fr);}
+  .compare-grid,.compare-cols{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<script>
+  // Auth guard - redirect to signin if not logged in
+  (function() {
+    var user = sessionStorage.getItem("ala_user");
+    if (!user) { window.location.href = "signin.html"; }
+  })();
+</script>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">Legis<span>AI</span></div>
+  <nav class="nav-section">
+    <div class="nav-label">Main</div>
+    <a class="nav-item active" onclick="showTab('analyzer',this)">
+      <span class="icon">🔍</span> Analyzer
+    </a>
+    <a class="nav-item" onclick="showTab('history',this)">
+      <span class="icon">📋</span> History
+    </a>
+    <a class="nav-item" onclick="showTab('metrics',this)">
+      <span class="icon">📊</span> Token Metrics
+    </a>
+    <a class="nav-item" onclick="showTab('compare',this)">
+      <span class="icon">⚖️</span> Compare Bills
+    </a>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="user-card">
+      <div class="avatar" id="avatarInitial">A</div>
+      <div class="user-info">
+        <div class="user-name" id="displayName">User</div>
+        <div class="user-role" id="displayEmail">Citizen</div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="sessionStorage.removeItem('ala_user'); window.location.href='signin.html'">↩ Logout</button>
+  </div>
+</aside>
+
+<!-- ── MAIN AREA ── -->
+<div class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="breadcrumb">Dashboard / <span id="breadcrumbLabel">Analyzer</span></div>
+    <div class="topbar-right">
+      <div class="token-saved" id="tokenSavedBadge">0 tokens saved today</div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- ══ ANALYZER TAB ══ -->
+    <div class="tab-pane active" id="tab-analyzer">
+      <div class="analyzer-header">
+        <h1>Legislative Analyzer</h1>
+        <p>Upload a bill or paste raw legal text. AI Legislative Analyzer compresses and summarizes it using multiple token-optimization techniques.</p>
+      </div>
+
+      <!-- Upload -->
+      <div class="upload-card">
+        <div class="upload-label">Step 01 — Upload Document</div>
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="fileInput" accept=".pdf,.txt" onchange="handleFile(this)"/>
+          <span class="drop-icon">📄</span>
+          <div class="drop-title">Drop a PDF / TXT bill here, or browse files</div>
+          <div class="drop-sub">Supports up to 100k+ tokens — we'll handle the compression</div>
+          <div class="file-badge" id="fileBadge"></div>
+        </div>
+
+        <div class="or-row"><span>or paste raw text</span></div>
+
+        <textarea id="rawText" placeholder="Paste legislative text here…" oninput="updateMeta()"></textarea>
+        <div class="meta-row">
+          <span class="meta-stat" id="metaStat">0 estimated tokens &nbsp;·&nbsp; 0 characters</span>
+        </div>
+      </div>
+
+      <!-- Techniques -->
+      <div class="techniques-card">
+        <div class="card-header">
+          <div class="card-title">🛠 Token Compression Techniques</div>
+        </div>
+        <div class="techniques-grid" id="techGrid">
+          <div class="tech-item selected" onclick="toggleTech(this)">
+            <div class="tech-icon">✂️</div>
+            <div class="tech-name">Stopword Removal</div>
+            <div class="tech-desc">Strip filler words like "the", "whereas", "hereinafter"</div>
+            <span class="tech-pct">~15% reduction</span>
+          </div>
+          <div class="tech-item selected" onclick="toggleTech(this)">
+            <div class="tech-icon">📑</div>
+            <div class="tech-name">Clause Chunking</div>
+            <div class="tech-desc">Split into semantic chunks, process independently</div>
+            <span class="tech-pct">~20% reduction</span>
+          </div>
+          <div class="tech-item selected" onclick="toggleTech(this)">
+            <div class="tech-icon">🔁</div>
+            <div class="tech-name">Deduplication</div>
+            <div class="tech-desc">Remove repeated legal boilerplate and definitions</div>
+            <span class="tech-pct">~25% reduction</span>
+          </div>
+          <div class="tech-item" onclick="toggleTech(this)">
+            <div class="tech-icon">🔤</div>
+            <div class="tech-name">Abbreviation Mapping</div>
+            <div class="tech-desc">Replace long legal terms with compressed codes</div>
+            <span class="tech-pct">~12% reduction</span>
+          </div>
+          <div class="tech-item selected" onclick="toggleTech(this)">
+            <div class="tech-icon">🌲</div>
+            <div class="tech-name">Hierarchical Summarization</div>
+            <div class="tech-desc">Summarize sub-sections before the full document</div>
+            <span class="tech-pct">~30% reduction</span>
+          </div>
+          <div class="tech-item selected" onclick="toggleTech(this)">
+            <div class="tech-icon">📈</div>
+            <div class="tech-name">TF-IDF Extraction</div>
+            <div class="tech-desc">Extract only the highest-importance sentences</div>
+            <span class="tech-pct">~35% reduction</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Audience + CTA -->
+      <div class="upload-card" style="padding:1.5rem;">
+        <div class="upload-label" style="margin-bottom:0.75rem;">Summarize for:</div>
+        <div class="audience-row" id="audienceRow">
+          <button class="aud-btn active" onclick="setAud(this)">👤 Citizen</button>
+          <button class="aud-btn" onclick="setAud(this)">📰 Journalist</button>
+          <button class="aud-btn" onclick="setAud(this)">⚖️ Lawyer</button>
+          <button class="aud-btn" onclick="setAud(this)">🔬 Researcher</button>
+        </div>
+        <button class="btn-analyze" id="analyzeBtn" onclick="runAnalysis()">
+          ⚡ Analyze &amp; Compress
+        </button>
+      </div>
+
+      <!-- Result -->
+      <div class="result-card" id="resultCard">
+        <div class="result-tabs">
+          <div class="rtab active" onclick="switchRTab(this,'tldr')">TL;DR</div>
+          <div class="rtab" onclick="switchRTab(this,'provisions')">Key Provisions</div>
+          <div class="rtab" onclick="switchRTab(this,'impact')">Impact</div>
+          <div class="rtab" onclick="switchRTab(this,'full')">Full Summary</div>
+          <div class="result-actions" style="margin-left:auto;">
+            <button class="act-btn" onclick="copyResult()">📋 Copy</button>
+            <button class="act-btn">⬇ Export</button>
+            <button class="act-btn">🔗 Share</button>
+          </div>
+        </div>
+        <div class="stat-chips" id="statChips"></div>
+        <div class="result-pane active" id="pane-tldr"></div>
+        <div class="result-pane" id="pane-provisions"></div>
+        <div class="result-pane" id="pane-impact"></div>
+        <div class="result-pane" id="pane-full"></div>
+      </div>
+    </div>
+
+    <!-- ══ HISTORY TAB ══ -->
+    <div class="tab-pane" id="tab-history">
+      <div class="analyzer-header">
+        <h1>Analysis History</h1>
+        <p>Your previously analyzed documents — revisit, compare or export any result.</p>
+      </div>
+      <div class="history-filters">
+        <button class="hfilt active">All</button>
+        <button class="hfilt">This Week</button>
+        <button class="hfilt">This Month</button>
+        <button class="hfilt">PDF</button>
+        <button class="hfilt">Text</button>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+
+    <!-- ══ METRICS TAB ══ -->
+    <div class="tab-pane" id="tab-metrics">
+      <div class="analyzer-header">
+        <h1>Token Metrics Dashboard</h1>
+        <p>Real-time savings from token compression techniques across all your analyses.</p>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Total Tokens Saved</div>
+          <div class="metric-val" id="mTotalSaved">0</div>
+          <div class="metric-sub">across all analyses</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Avg. Compression</div>
+          <div class="metric-val">63%</div>
+          <div class="metric-sub">token reduction rate</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Documents Analyzed</div>
+          <div class="metric-val" id="mDocs">0</div>
+          <div class="metric-sub">total this session</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Est. Cost Saved</div>
+          <div class="metric-val" id="mCost">$0.00</div>
+          <div class="metric-sub">at $0.01 / 1K tokens</div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="card-title" style="margin-bottom:1.25rem;">Compression by Technique</div>
+        <div class="bar-chart" id="barChart"></div>
+      </div>
+    </div>
+
+    <!-- ══ COMPARE TAB ══ -->
+    <div class="tab-pane" id="tab-compare">
+      <div class="analyzer-header">
+        <h1>Compare Bills</h1>
+        <p>Side-by-side AI comparison of two legislative documents — find conflicts, overlaps and key differences.</p>
+      </div>
+      <div class="compare-grid">
+        <div class="compare-panel">
+          <div class="compare-title">📄 Bill A</div>
+          <div class="upload-label" style="margin-bottom:0.5rem;">Upload or paste</div>
+          <textarea id="billA" placeholder="Paste Bill A text here…" style="min-height:180px;"></textarea>
+        </div>
+        <div class="compare-panel">
+          <div class="compare-title">📄 Bill B</div>
+          <div class="upload-label" style="margin-bottom:0.5rem;">Upload or paste</div>
+          <textarea id="billB" placeholder="Paste Bill B text here…" style="min-height:180px;"></textarea>
+        </div>
+      </div>
+      <div style="text-align:center;margin-bottom:1.5rem;">
+        <button class="btn-compare" onclick="runCompare()">⚖️ Compare Bills</button>
+      </div>
+      <div class="compare-result" id="compareResult">
+        <div class="card-title" style="margin-bottom:1rem;">Comparison Analysis</div>
+        <div class="compare-cols">
+          <div class="compare-col">
+            <h4>Bill A — Key Points</h4>
+            <div id="compareA"></div>
+          </div>
+          <div class="compare-col">
+            <h4>Bill B — Key Points</h4>
+            <div id="compareB"></div>
+          </div>
+        </div>
+        <div class="diff-highlight" id="diffHighlight"></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ══ PIPELINE MODAL ══ -->
+<div class="pipeline-overlay" id="pipelineOverlay">
+  <div class="pipeline-box">
+    <div class="pipeline-title">🔬 Compression Pipeline</div>
+    <div class="pipeline-sub">Processing your legislative document…</div>
+    <div class="pipeline-steps" id="pipelineSteps"></div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State
+let tokensSavedTotal = 0;
+let docsCount = 0;
+let analysisHistory = [];
+
+const PIPELINE_STEPS = [
+  {icon:'✂️', label:'Removing stopwords…'},
+  {icon:'📑', label:'Chunking clauses…'},
+  {icon:'🔁', label:'Deduplicating content…'},
+  {icon:'📈', label:'TF-IDF extraction…'},
+  {icon:'🤖', label:'Sending to AI…'},
+];
+
+const TECHNIQUES_DATA = [
+  {name:'Stopword Removal', pct:15},
+  {name:'Clause Chunking', pct:20},
+  {name:'Deduplication', pct:25},
+  {name:'Abbreviation Mapping', pct:12},
+  {name:'Hierarchical Summarization', pct:30},
+  {name:'TF-IDF Extraction', pct:35},
+];
+function analyze() {
+    const fileInput = document.getElementById("fileInput");
+
+    if (!fileInput.files.length) {
+        alert("Please upload a PDF file");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    fetch("http://127.0.0.1:5000/analyze", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Server error");
+        }
+        return response.json();
+    })
+    .then(data => {
+        document.getElementById("summary").innerText = data.summary;
+
+        document.getElementById("tokens").innerText =
+            "Original: " + data.original_tokens +
+            " | Compressed: " + data.compressed_tokens +
+            " | Reduction: " + data.reduction_percent + "%";
+    })
+    .catch(error => {
+        console.error(error);
+        alert("Error connecting to backend");
+    });
+}
+
+// ── Tab switching
+function showTab(id, el) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  el.classList.add('active');
+  const labels = {analyzer:'Analyzer',history:'History',metrics:'Token Metrics',compare:'Compare Bills'};
+  document.getElementById('breadcrumbLabel').textContent = labels[id];
+  if(id==='metrics') renderMetrics();
+  if(id==='history') renderHistory();
+}
+
+// ── File handling
+function handleFile(input){
+  const fn = document.getElementById('fileBadge');
+  if(input.files[0]){
+    fn.textContent = '✓ '+input.files[0].name;
+    fn.style.display = 'block';
+  }
+}
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{
+  e.preventDefault();dz.classList.remove('over');
+  if(e.dataTransfer.files[0]){
+    document.getElementById('fileInput').files=e.dataTransfer.files;
+    handleFile(document.getElementById('fileInput'));
+  }
+});
+
+// ── Token meta
+function updateMeta(){
+  const txt = document.getElementById('rawText').value;
+  const chars = txt.length;
+  const tokens = Math.round(chars/4);
+  document.getElementById('metaStat').textContent = `${tokens.toLocaleString()} estimated tokens · ${chars.toLocaleString()} characters`;
+}
+
+// ── Technique toggle
+function toggleTech(el){el.classList.toggle('selected');}
+
+// ── Audience
+function setAud(el){
+  document.querySelectorAll('.aud-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── Result tabs
+function switchRTab(el, pane){
+  document.querySelectorAll('.rtab').forEach(r=>r.classList.remove('active'));
+  document.querySelectorAll('.result-pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+pane).classList.add('active');
+}
+
+function copyResult(){
+  const active = document.querySelector('.result-pane.active');
+  if(active) navigator.clipboard.writeText(active.innerText);
+}
+
+// ── Pipeline animation
+function runPipeline(){
+  return new Promise(resolve=>{
+    const overlay = document.getElementById('pipelineOverlay');
+    const stepsEl = document.getElementById('pipelineSteps');
+    const bar = document.getElementById('progressBar');
+    overlay.classList.add('show');
+    stepsEl.innerHTML = '';
+    bar.style.width='0%';
+
+    const stepEls = PIPELINE_STEPS.map((s,i)=>{
+      const div = document.createElement('div');
+      div.className = 'p-step';
+      div.innerHTML = `<span class="step-icon">${s.icon}</span><span>${s.label}</span><span style="margin-left:auto;opacity:0.3" id="si${i}">○</span>`;
+      stepsEl.appendChild(div);
+      return div;
+    });
+
+    let i = 0;
+    function next(){
+      if(i>0){
+        stepEls[i-1].classList.remove('active');
+        stepEls[i-1].classList.add('done');
+        document.getElementById('si'+(i-1)).innerHTML='<span class="step-check">✓</span>';
+      }
+      if(i>=PIPELINE_STEPS.length){
+        bar.style.width='100%';
+        setTimeout(()=>{overlay.classList.remove('show');resolve();},400);
+        return;
+      }
+      stepEls[i].classList.add('active');
+      document.getElementById('si'+i).innerHTML='<div class="step-spinner"></div>';
+      bar.style.width=((i+1)/PIPELINE_STEPS.length*90)+'%';
+      i++;
+      setTimeout(next,700+Math.random()*400);
+    }
+    next();
+  });
+}
+
+// ── Main analysis
+async function runAnalysis(){
+  const file = document.getElementById('fileInput').files[0];
+  const text = document.getElementById('rawText').value.trim();
+  if(!file && !text){alert('Please upload a file or paste text.');return;}
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Processing…';
+
+  await runPipeline();
+
+  // Simulate result (replace with real API call)
+ const formData = new FormData();
+
+if (file) {
+    formData.append("file", file);
+} else {
+    formData.append("text", text);
+}
+
+fetch("http://127.0.0.1:5000/analyze", {
+    method: "POST",
+    body: formData
+})
+.then(res => {
+    if (!res.ok) throw new Error("Server error");
+    return res.json();
+})
+.then(data => {
+  document.getElementById('statChips').innerHTML = `
+  <span class="chip chip-gold">Original: ${data.original_tokens} tokens</span>
+  <span class="chip chip-green">Compressed: ${data.compressed_tokens} tokens</span>
+  <span class="chip chip-green">Saved: ${data.reduction_percent}%</span>
+`;
+    document.getElementById('pane-tldr').innerHTML =
+        `<div class="result-content">${data.summary}</div>`;
+
+    document.getElementById('pane-provisions').innerHTML =
+        `<div class="result-content">${data.provisions || 'No data'}</div>`;
+
+    document.getElementById('pane-impact').innerHTML =
+        `<div class="result-content">${data.impact || 'No data'}</div>`;
+
+    document.getElementById('pane-full').innerHTML =
+        `<div class="result-content">${data.full || 'No data'}</div>`;
+
+    // OPTIONAL stats (only if backend sends values)
+    if (data.original_tokens) {
+        document.getElementById('statChips').innerHTML = `
+            <span class="chip chip-gold">Original: ${data.original_tokens}</span>
+            <span class="chip chip-green">Compressed: ${data.compressed_tokens}</span>
+            <span class="chip chip-green">Reduction: ${data.reduction_percent}%</span>
+        `;
+    }
+
+    document.getElementById('resultCard').classList.add('visible');
+})
+.catch(err => {
+    console.error(err);
+    alert("Backend connection error");
+});
+
+  
+  btn.disabled = false;
+  btn.innerHTML = '⚡ Analyze &amp; Compress';
+}
+
+// ── History render
+function renderHistory(){
+  const list = document.getElementById('historyList');
+  if(!analysisHistory.length){
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No analyses yet</div><p>Run your first analysis in the Analyzer tab.</p></div>`;
+    return;
+  }
+  list.innerHTML = analysisHistory.map(h=>`
+    <div class="hist-item">
+      <div class="hist-icon">${h.type==='PDF'?'📄':'📝'}</div>
+      <div class="hist-body">
+        <div class="hist-name">${h.name}</div>
+        <div class="hist-meta">${h.origTokens.toLocaleString()} orig tokens → ${h.compressed.toLocaleString()} compressed · ${h.type}</div>
+      </div>
+      <div class="hist-right">
+        <div class="hist-saved">−${h.saved.toLocaleString()} tokens</div>
+        <div class="hist-date">${h.date}</div>
+      </div>
+    </div>
+  `).join('');
+  btn.disabled = false;
+btn.innerHTML = '⚡ Analyze & Compress';
+}
+
+// ── Metrics render
+function renderMetrics(){
+  document.getElementById('mTotalSaved').textContent = tokensSavedTotal.toLocaleString();
+  document.getElementById('mDocs').textContent = docsCount;
+  document.getElementById('mCost').textContent = '$'+(tokensSavedTotal/1000*0.01).toFixed(3);
+
+  const chart = document.getElementById('barChart');
+  chart.innerHTML = TECHNIQUES_DATA.map(t=>`
+    <div class="bar-row">
+      <div class="bar-label">${t.name}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${t.pct*2.5}%">
+          <span class="bar-pct">${t.pct}%</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Compare
+async function runCompare(){
+  const a = document.getElementById('billA').value.trim();
+  const b = document.getElementById('billB').value.trim();
+  if(!a||!b){alert('Please provide text for both bills.');return;}
+
+  await runPipeline();
+
+  document.getElementById('compareA').innerHTML = [
+    'Establishes federal environmental compliance board',
+    'Mandates 30% emissions reduction by 2027',
+    'Allocates $2.4B in green infrastructure grants',
+    'Sets penalties up to $2M per violation'
+  ].map(p=>`<div class="compare-point">${p}</div>`).join('');
+
+  document.getElementById('compareB').innerHTML = [
+    'Delegates compliance to state-level agencies',
+    'Targets 20% reduction by 2030 (slower timeline)',
+    'Allocates $1.1B — focused on rural facilities',
+    'Caps penalties at $500K — lower deterrent'
+  ].map(p=>`<div class="compare-point">${p}</div>`).join('');
+
+  document.getElementById('diffHighlight').innerHTML = `
+    <strong style="color:var(--accent);font-family:'DM Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;">⚖ KEY DIFFERENCES</strong><br><br>
+    Bill A favors centralized federal enforcement with stricter timelines and higher penalties. Bill B prioritizes state autonomy with a more gradual transition and lower financial deterrents. The two bills are fundamentally incompatible on enforcement structure — a reconciliation committee would be required before either could pass.
+  `;
+  document.getElementById('compareResult').classList.add('visible');
+}
+
+// ── Filter buttons (history)
+document.querySelectorAll('.hfilt').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.hfilt').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+  });
+});
+
+// ── Init metrics bars on load
+renderMetrics();
+
+// ── Populate user info from session
+(function() {
+  try {
+    var user = JSON.parse(sessionStorage.getItem('ala_user') || '{}');
+    var name = user.name || 'User';
+    var email = user.email || '';
+    var initial = name.charAt(0).toUpperCase();
+    var nameEl = document.getElementById('displayName');
+    var emailEl = document.getElementById('displayEmail');
+    var avatarEl = document.getElementById('avatarInitial');
+    if (nameEl) nameEl.textContent = name;
+    if (emailEl) emailEl.textContent = email;
+    if (avatarEl) avatarEl.textContent = initial;
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>
