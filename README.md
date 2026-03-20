@@ -69,31 +69,12 @@ Go to backend folder (if separated):
 cd backend
 python app.py
 
-👉 You should see:
-
-Running on http://127.0.0.1:5000/
 🔹 Step 3: Run Frontend
 Option 1 (Simple):
 
 Open index.html in browser
 
-Option 2 (Recommended):
 
-Use Live Server (VS Code)
-
-🔹 Step 5: Connect Frontend with Backend
-
-Ensure API calls point to:
-
-http://127.0.0.1:5000/analyze
-
-Example:
-
-fetch("http://127.0.0.1:5000/analyze", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ text: inputText })
-})
 
 
 ⚙️ How It Works
