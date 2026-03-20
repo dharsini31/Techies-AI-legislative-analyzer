@@ -62,6 +62,7 @@ MySQL / MongoDB
 Make sure Python is installed (Python 3.8+ recommended)
 
 pip install -r requirements.txt
+
 🔹 Step 2: Run Backend Server
 
 Go to backend folder (if separated):
@@ -95,19 +96,7 @@ Key insights
 
 Results are displayed on the dashboard
 
-🔗 Connecting Frontend & Backend
 
-Ensure Flask server is running (localhost:5000)
-
-Use API endpoints in JavaScript (fetch or axios)
-
-Example:
-
-fetch("http://127.0.0.1:5000/analyze", {
-  method: "POST",
-  body: JSON.stringify({ text: inputText }),
-  headers: { "Content-Type": "application/json" }
-})
 
 Future Enhancements
 
