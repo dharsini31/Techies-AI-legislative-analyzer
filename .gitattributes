@@ -1,0 +1,5 @@
+# GitHub Linguist Configuration
+# Prioritize Python in language statistics and exclude frontend presentation files
+
+frontend/** linguist-detectable=false
+*.html linguist-detectable=false
